@@ -132,6 +132,8 @@ element tag, and the singular is used for each child tag.
 @defproc[(flexpr? [v any/c]) boolean?]{ Predicate. }
 
 
+@subsection{XML}
+
 @defproc[(flexpr->xexpr
           [v flexpr?]
           [#:root root symbol? 'Response]) xexpr?]{
@@ -155,6 +157,32 @@ providing a hint that instead you should do:
 }
 
 
+@defproc[(write-flexpr-xml/content [v flexpr?]
+                                   [out output-port? (current-output-port)])
+void?]{
+
+Write @racket[v] as XML.
+
+Effectively the composition of @racket[write-xml/content] and
+@racket[flexpr->xexpr].
+
+}
+
+
+@defproc[(display-flexpr-xml/content [v flexpr?]
+                                     [out output-port? (current-output-port)])
+void?]{
+
+Write @racket[v] as XML.
+
+Effectively the composition of @racket[display-xml/content] and
+@racket[flexpr->xexpr].
+
+}
+
+
+@subsection{JSON}
+
 @defproc[(flexpr->jsexpr [v flexpr?]) jsexpr?]{
 
 Convert @racket[v] to a @racket[jsexpr?].
@@ -162,6 +190,19 @@ Convert @racket[v] to a @racket[jsexpr?].
 Because a @racket[flexpr?] is a subset of a @racket[jsexpr?], this is
 approximately the composition of @racket[values] with
 @racket[flexpr?].}
+
+
+@defproc[(write-flexpr-json [v flexpr?]
+                            [out output-port? (current-output-port)]
+                            [#:null jsnull any/c (json-null)]
+                            [#:encode encode (or/c 'control 'all) 'control])
+void?]{
+
+Write @racket[v] as JSON.
+
+Effectively the composition of @racket[write-json] and @racket[flexpr->jsexpr].
+
+}
 
 
 @section{Customizing "plural" symbols}

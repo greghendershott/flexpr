@@ -16,7 +16,10 @@
          (contract-out [current-singular-symbol (parameter/c singular-symbol/c)]
                        [default-singular-symbol singular-symbol/c])
          flexpr->xexpr
-         flexpr->jsexpr)
+         write-flexpr-xml/content
+         display-flexpr-xml/content
+         flexpr->jsexpr
+         write-flexpr-json)
 
 (module+ test
   (require rackunit))
@@ -123,6 +126,14 @@
   (check-exn #px"hash table key must be plural-symbol?"
              (λ () (flexpr->xexpr (hasheq 'item (list 0 1 2))))))
 
+(define (write-flexpr-xml/content v [out (current-output-port)])
+  (void (write-xml/content (xexpr->xml (flexpr->xexpr v))
+                           out)))
+
+(define (display-flexpr-xml/content v [out (current-output-port)])
+  (void (display-xml/content (xexpr->xml (flexpr->xexpr v))
+                             out)))
+
 
 ;;; Conversion to jsexpr / json
 
@@ -130,6 +141,15 @@
   (unless (flexpr? v)
     (raise-argument-error 'flexpr->jsexpr "flexpr" 0 v))
   v)
+
+(define (write-flexpr-json v
+                           [out (current-output-port)]
+                           #:null [jsnull (json-null)]
+                           #:encode [encode 'control])
+  (void (write-json (flexpr->jsexpr v)
+                    out
+                    #:null jsnull
+                    #:encode encode)))
 
 
 ;;; Test same data, both conversions
@@ -171,7 +191,22 @@
                                                 (GPA () "4.0")
                                                 (LastName () "Hacker")))))
 
-    (check-equal? (flexpr->jsexpr v) v))
+    (let ([out (open-output-string)])
+      (write-flexpr-xml/content v out)
+      (check-equal? (get-output-string out)
+                    "<Response><ResponseId>123123</ResponseId><Students><Student><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Student><Student><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Student></Students></Response>"))
+
+    (let ([out (open-output-string)])
+      (display-flexpr-xml/content v out)
+      (check-equal? (get-output-string out)
+                    "\n<Response>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Students>\n    <Student>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Student>\n    <Student>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Student>\n  </Students>\n</Response>"))
+
+    (check-equal? (flexpr->jsexpr v) v)
+
+    (let ([out (open-output-string)])
+      (write-flexpr-json v out)
+      (check-equal? (get-output-string out)
+                    "{\"ResponseId\":123123,\"Students\":[{\"FirstName\":\"John\",\"LastName\":\"Doe\",\"Age\":12,\"Active\":false,\"GPA\":3.4},{\"FirstName\":\"Alyssa\",\"LastName\":\"Hacker\",\"Age\":14,\"Active\":true,\"GPA\":4.0}]}")))
 
   ;; Using pluralization that needs a custom current-singular-symbol
   (parameterize ([current-singular-symbol
@@ -209,4 +244,19 @@
                                                      (GPA () "4.0")
                                                      (LastName () "Hacker")))))
 
-      (check-equal? (flexpr->jsexpr v) v))))
+    (let ([out (open-output-string)])
+      (write-flexpr-xml/content v out)
+      (check-equal? (get-output-string out)
+                    "<Response><ResponseId>123123</ResponseId><Werewolves><Werewolf><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Werewolf><Werewolf><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Werewolf></Werewolves></Response>"))
+
+    (let ([out (open-output-string)])
+      (display-flexpr-xml/content v out)
+      (check-equal? (get-output-string out)
+                    "\n<Response>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Werewolves>\n    <Werewolf>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Werewolf>\n    <Werewolf>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Werewolf>\n  </Werewolves>\n</Response>"))
+
+    (check-equal? (flexpr->jsexpr v) v)
+
+    (let ([out (open-output-string)])
+      (write-flexpr-json v out)
+      (check-equal? (get-output-string out)
+                    "{\"ResponseId\":123123,\"Werewolves\":[{\"FirstName\":\"John\",\"LastName\":\"Doe\",\"Age\":12,\"Active\":false,\"GPA\":3.4},{\"FirstName\":\"Alyssa\",\"LastName\":\"Hacker\",\"Age\":14,\"Active\":true,\"GPA\":4.0}]}")))))
