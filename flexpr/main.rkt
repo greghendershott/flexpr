@@ -1,6 +1,7 @@
 #lang at-exp racket/base
 
 (require json
+         racket/contract/base
          racket/format
          racket/function
          racket/list
@@ -11,6 +12,9 @@
                        xml)
          flexpr?
          plural-symbol?
+         singular-symbol/c
+         (contract-out [current-singular-symbol (parameter/c singular-symbol/c)]
+                       [default-singular-symbol singular-symbol/c])
          flexpr->xexpr
          flexpr->jsexpr)
 
@@ -18,7 +22,23 @@
   (require rackunit))
 
 
-;;; Predicates
+;;; Plural and singular symbols
+
+(define singular-symbol/c (-> symbol? (or/c symbol? #f)))
+
+(define (default-singular-symbol v) ;singular-symbol/c
+  (and (symbol? v)
+       (let ([s (symbol->string v)])
+         (and (eq? #\s (string-ref s (sub1 (string-length s))))
+              (string->symbol (substring s 0 (sub1 (string-length s))))))))
+
+(define current-singular-symbol (make-parameter default-singular-symbol))
+
+(define (plural-symbol? v) ;any -> boolean?
+  (and ((current-singular-symbol) v) #t))
+
+
+;;; flexpr? predicate
 
 (define (flexpr? v) ;any -> boolean?
   (match v
@@ -55,21 +75,11 @@
   (check-flexpr? (hasheq 'results '(1 2 3) 'other 0))
   (check-not-flexpr? (hasheq 'singular '(1 2 3))))
 
-(define (plural-symbol? v) ;any -> boolean?
-  (and (symbol? v)
-       (let ([s (symbol->string v)])
-         (eq? #\s (string-ref s (sub1 (string-length s)))))))
-
-(define (singular-symbol v) ;plural-symbol? -> symbol?
-  (and (plural-symbol? v)
-       (let ([s (symbol->string v)])
-         (string->symbol (substring s 0 (sub1 (string-length s)))))))
-
 
 ;;; Conversion to xexpr / xml
 
 ;; Note: A contract with flexpr? would double traverse, don't need.
-(define (flexpr->xexpr v #:root [root 'Response]) ;flexpr? symbol? -> xexpr?
+(define (flexpr->xexpr v #:root [root 'Response])
   (unless (symbol? root)
     (raise-argument-error 'flexpr->xexpr "symbol" 1 v root))
   (list* root
@@ -85,7 +95,7 @@
               (for/list ([(k v) (in-hash ht)])
                 (match* (k v)
                   [((? plural-symbol? plural) (? list? vs))
-                   (define singular (singular-symbol plural))
+                   (define singular ((current-singular-symbol) plural))
                    (list* plural (list)
                           (for/list ([v (in-list vs)])
                             (list* singular (list)
@@ -122,6 +132,7 @@
 
   (check-equal? (flexpr->jsexpr (hasheq)) (hasheq))
 
+  ;; Using default-singular-symbol
   (let ([v (hasheq 'ResponseId 123123
                    'Students
                    (list (hasheq 'FirstName "John"
@@ -153,4 +164,42 @@
                                                 (Active () "true")
                                                 (GPA () "4.0")))))
 
-    (check-equal? (flexpr->jsexpr v) v)))
+    (check-equal? (flexpr->jsexpr v) v))
+
+  ;; Using custom current-singular-symbol
+  (parameterize ([current-singular-symbol
+                  (λ (s)
+                    (or (and (eq? s 'Werewolves) 'Werewolf)
+                        (default-singular-symbol s)))])
+    (let ([v (hasheq 'ResponseId 123123
+                     'Werewolves
+                     (list (hasheq 'FirstName "John"
+                                   'LastName "Doe"
+                                   'Age 12
+                                   'Active #f
+                                   'GPA 3.4)
+                           (hasheq 'FirstName "Alyssa"
+                                   'LastName "Hacker"
+                                   'Age 14
+                                   'Active #t
+                                   'GPA 4.0)))])
+      (check-true (flexpr? v))
+
+      (check-equal? (flexpr->xexpr v)
+                    '(Response ()
+                               (ResponseId () "123123")
+                               (Werewolves ()
+                                           (Werewolf ()
+                                                     (FirstName () "John")
+                                                     (LastName () "Doe")
+                                                     (Age () "12")
+                                                     (Active () "false")
+                                                     (GPA () "3.4"))
+                                           (Werewolf ()
+                                                     (FirstName () "Alyssa")
+                                                     (LastName () "Hacker")
+                                                     (Age () "14")
+                                                     (Active () "true")
+                                                     (GPA () "4.0")))))
+
+      (check-equal? (flexpr->jsexpr v) v))))

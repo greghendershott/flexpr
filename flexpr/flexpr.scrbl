@@ -127,19 +127,9 @@ element tag, and the singular is used for each child tag.
 ]
 
 
-@section{Functions}
+@section{Basics}
 
 @defproc[(flexpr? [v any/c]) boolean?]{ Predicate. }
-
-
-@defproc[(plural-symbol? [v any/c]) boolean?]{
-
-Is @racket[v] a @racket[symbol?] ending with @racket[#\s]?
-
-@interaction[#:eval my-eval
-             (plural-symbol? 'Items)
-             (plural-symbol? 'Item)]
-}
 
 
 @defproc[(flexpr->xexpr
@@ -172,3 +162,65 @@ Convert @racket[v] to a @racket[jsexpr?].
 Because a @racket[flexpr?] is a subset of a @racket[jsexpr?], this is
 approximately the composition of @racket[values] with
 @racket[flexpr?].}
+
+
+@section{Customizing "plural" symbols}
+
+Although the default idea of a "plural symbol" is simply
+@racket[default-singular-symbol], you may enhance this by supplying a
+different function as the value of the
+@racket[current-singular-symbol] parameter.
+
+
+@defproc[(default-singular-symbol [v symbol?]) (or/c symbol? #f)]{
+
+The default value of the @racket[current-singular-symbol] parameter --
+a function that simply converts a symbol ending in @racket[#\s] to a
+symbol lacking the @racket[#\s], and returns @racket[#f] for all other
+symbols.
+
+@interaction[#:eval my-eval
+             (default-singular-symbol 'vampires)
+             (default-singular-symbol 'vampire)]
+
+}
+
+
+@deftogether[(
+  @defparam[current-singular-symbol proc singular-symbol/c #:value default-singular-symbol]
+  @defthing[singular-symbol/c (symbol? -> (or/c symbol? #f))]
+)]{
+
+A parameter whose value is a function that converts plural symbols to
+singular, and returns @racket[#f] for all other symbols.
+
+You may customize this to extend or replace
+@racket[default-singular-symbol].
+
+@interaction[#:eval my-eval
+             (parameterize ([current-singular-symbol
+                             (λ (s)
+                               (or (and (eq? s 'Werewolves) 'Werewolf)
+                                   (default-singular-symbol s)))])
+               (pretty-print
+                (flexpr->xexpr
+                 (hasheq 'Werewolves
+                         (list (hasheq 'FirstName "John"
+                                       'FangLength 6.4)
+                               (hasheq 'FirstName "Alyssa"
+                                       'FangLength 5.0))
+                         'Vampires
+                         (list (hasheq 'FirstName "John"
+                                       'FangLength 3.4)
+                               (hasheq 'FirstName "Alyssa"
+                                       'FangLength 4.0))))))]
+}
+
+
+@defproc[(plural-symbol? [v any/c]) boolean?]{
+
+A predicate that is effectively just:
+
+@racketblock[(and ((current-singular-symbol) v) #t)]
+
+}
