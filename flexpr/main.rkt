@@ -92,7 +92,11 @@
              [(? exact-integer? v) (list (~a v))]
              [(? inexact-real? v)  (list (~a v))]
              [(and (? hash?) (? hash-eq? ht))
-              (for/list ([(k v) (in-hash ht)])
+              ;; Important: Output the elements in a order that isn't
+              ;; subject to `in-hash` or `hash-keys` order changing across
+              ;; various versions of Racket.
+              (for/list ([k (in-list (sort (hash-keys ht) symbol<?))])
+                (define v (hash-ref ht k))
                 (match* (k v)
                   [((? plural-symbol? plural) (? list? vs))
                    (define singular ((current-singular-symbol) plural))
@@ -110,6 +114,9 @@
                   [((? symbol? k) v) (list* k (list) (f->x v))]
                   [(k _) (raise-argument-error 'flexpr->xexpr "symbol" k)]))]
              [v (raise-argument-error 'flexpr->xexpr "flexpr" v)]))))
+
+(define (symbol<? a b)
+  (string<? (symbol->string a) (symbol->string b)))
 
 (module+ test
   (check-false (flexpr? (hasheq 'item (list 0 1 2))))
@@ -152,21 +159,21 @@
                              (ResponseId () "123123")
                              (Students ()
                                        (Student ()
-                                                (FirstName () "John")
-                                                (LastName () "Doe")
-                                                (Age () "12")
                                                 (Active () "false")
-                                                (GPA () "3.4"))
+                                                (Age () "12")
+                                                (FirstName () "John")
+                                                (GPA () "3.4")
+                                                (LastName () "Doe"))
                                        (Student ()
-                                                (FirstName () "Alyssa")
-                                                (LastName () "Hacker")
-                                                (Age () "14")
                                                 (Active () "true")
-                                                (GPA () "4.0")))))
+                                                (Age () "14")
+                                                (FirstName () "Alyssa")
+                                                (GPA () "4.0")
+                                                (LastName () "Hacker")))))
 
     (check-equal? (flexpr->jsexpr v) v))
 
-  ;; Using custom current-singular-symbol
+  ;; Using pluralization that needs a custom current-singular-symbol
   (parameterize ([current-singular-symbol
                   (λ (s)
                     (or (and (eq? s 'Werewolves) 'Werewolf)
@@ -190,16 +197,16 @@
                                (ResponseId () "123123")
                                (Werewolves ()
                                            (Werewolf ()
-                                                     (FirstName () "John")
-                                                     (LastName () "Doe")
-                                                     (Age () "12")
                                                      (Active () "false")
-                                                     (GPA () "3.4"))
+                                                     (Age () "12")
+                                                     (FirstName () "John")
+                                                     (GPA () "3.4")
+                                                     (LastName () "Doe"))
                                            (Werewolf ()
-                                                     (FirstName () "Alyssa")
-                                                     (LastName () "Hacker")
-                                                     (Age () "14")
                                                      (Active () "true")
-                                                     (GPA () "4.0")))))
+                                                     (Age () "14")
+                                                     (FirstName () "Alyssa")
+                                                     (GPA () "4.0")
+                                                     (LastName () "Hacker")))))
 
       (check-equal? (flexpr->jsexpr v) v))))
