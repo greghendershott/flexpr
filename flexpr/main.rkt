@@ -126,12 +126,16 @@
   (check-exn #px"hash table key must be plural-symbol?"
              (λ () (flexpr->xexpr (hasheq 'item (list 0 1 2))))))
 
-(define (write-flexpr-xml/content v [out (current-output-port)])
-  (void (write-xml/content (xexpr->xml (flexpr->xexpr v))
+(define (write-flexpr-xml/content v
+                                  #:root [root 'Response]
+                                  [out (current-output-port)])
+  (void (write-xml/content (xexpr->xml (flexpr->xexpr v #:root root))
                            out)))
 
-(define (display-flexpr-xml/content v [out (current-output-port)])
-  (void (display-xml/content (xexpr->xml (flexpr->xexpr v))
+(define (display-flexpr-xml/content v
+                                    #:root [root 'Response]
+                                    [out (current-output-port)])
+  (void (display-xml/content (xexpr->xml (flexpr->xexpr v #:root root))
                              out)))
 
 
@@ -192,14 +196,14 @@
                                                 (LastName () "Hacker")))))
 
     (let ([out (open-output-string)])
-      (write-flexpr-xml/content v out)
+      (write-flexpr-xml/content v out #:root 'Root)
       (check-equal? (get-output-string out)
-                    "<Response><ResponseId>123123</ResponseId><Students><Student><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Student><Student><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Student></Students></Response>"))
+                    "<Root><ResponseId>123123</ResponseId><Students><Student><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Student><Student><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Student></Students></Root>"))
 
     (let ([out (open-output-string)])
-      (display-flexpr-xml/content v out)
+      (display-flexpr-xml/content v out #:root 'Root)
       (check-equal? (get-output-string out)
-                    "\n<Response>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Students>\n    <Student>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Student>\n    <Student>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Student>\n  </Students>\n</Response>"))
+                    "\n<Root>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Students>\n    <Student>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Student>\n    <Student>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Student>\n  </Students>\n</Root>"))
 
     (check-equal? (flexpr->jsexpr v) v)
 
@@ -245,14 +249,14 @@
                                                      (LastName () "Hacker")))))
 
     (let ([out (open-output-string)])
-      (write-flexpr-xml/content v out)
+      (write-flexpr-xml/content v out #:root 'Root)
       (check-equal? (get-output-string out)
-                    "<Response><ResponseId>123123</ResponseId><Werewolves><Werewolf><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Werewolf><Werewolf><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Werewolf></Werewolves></Response>"))
+                    "<Root><ResponseId>123123</ResponseId><Werewolves><Werewolf><Active>false</Active><Age>12</Age><FirstName>John</FirstName><GPA>3.4</GPA><LastName>Doe</LastName></Werewolf><Werewolf><Active>true</Active><Age>14</Age><FirstName>Alyssa</FirstName><GPA>4.0</GPA><LastName>Hacker</LastName></Werewolf></Werewolves></Root>"))
 
     (let ([out (open-output-string)])
-      (display-flexpr-xml/content v out)
+      (display-flexpr-xml/content v out #:root 'Root)
       (check-equal? (get-output-string out)
-                    "\n<Response>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Werewolves>\n    <Werewolf>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Werewolf>\n    <Werewolf>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Werewolf>\n  </Werewolves>\n</Response>"))
+                    "\n<Root>\n  <ResponseId>\n    123123\n  </ResponseId>\n  <Werewolves>\n    <Werewolf>\n      <Active>\n        false\n      </Active>\n      <Age>\n        12\n      </Age>\n      <FirstName>\n        John\n      </FirstName>\n      <GPA>\n        3.4\n      </GPA>\n      <LastName>\n        Doe\n      </LastName>\n    </Werewolf>\n    <Werewolf>\n      <Active>\n        true\n      </Active>\n      <Age>\n        14\n      </Age>\n      <FirstName>\n        Alyssa\n      </FirstName>\n      <GPA>\n        4.0\n      </GPA>\n      <LastName>\n        Hacker\n      </LastName>\n    </Werewolf>\n  </Werewolves>\n</Root>"))
 
     (check-equal? (flexpr->jsexpr v) v)
 

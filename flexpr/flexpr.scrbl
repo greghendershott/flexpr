@@ -136,7 +136,8 @@ element tag, and the singular is used for each child tag.
 
 @defproc[(flexpr->xexpr
           [v flexpr?]
-          [#:root root symbol? 'Response]) xexpr?]{
+          [#:root root symbol? 'Response])
+xexpr?]{
 
 Convert @racket[v] to an @racket[xexpr?], which is enclosed in an
 element whose tag is @racket[root].
@@ -158,7 +159,8 @@ providing a hint that instead you should do:
 
 
 @defproc[(write-flexpr-xml/content [v flexpr?]
-                                   [out output-port? (current-output-port)])
+                                   [out output-port? (current-output-port)]
+                                   [#:root root symbol? 'Response])
 void?]{
 
 Write @racket[v] as XML.
@@ -170,7 +172,8 @@ Effectively the composition of @racket[write-xml/content] and
 
 
 @defproc[(display-flexpr-xml/content [v flexpr?]
-                                     [out output-port? (current-output-port)])
+                                     [out output-port? (current-output-port)]
+                                     [#:root root symbol? 'Response])
 void?]{
 
 Write @racket[v] as XML.
