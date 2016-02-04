@@ -209,8 +209,7 @@
 
     (let ([out (open-output-string)])
       (write-flexpr-json v out)
-      (check-equal? (get-output-string out)
-                    "{\"ResponseId\":123123,\"Students\":[{\"FirstName\":\"John\",\"LastName\":\"Doe\",\"Age\":12,\"Active\":false,\"GPA\":3.4},{\"FirstName\":\"Alyssa\",\"LastName\":\"Hacker\",\"Age\":14,\"Active\":true,\"GPA\":4.0}]}")))
+      (check-equal? (string->jsexpr (get-output-string out)) v)))
 
   ;; Using pluralization that needs a custom current-singular-symbol
   (parameterize ([current-singular-symbol
@@ -262,5 +261,4 @@
 
     (let ([out (open-output-string)])
       (write-flexpr-json v out)
-      (check-equal? (get-output-string out)
-                    "{\"ResponseId\":123123,\"Werewolves\":[{\"FirstName\":\"John\",\"LastName\":\"Doe\",\"Age\":12,\"Active\":false,\"GPA\":3.4},{\"FirstName\":\"Alyssa\",\"LastName\":\"Hacker\",\"Age\":14,\"Active\":true,\"GPA\":4.0}]}")))))
+      (check-equal? (string->jsexpr (get-output-string out)) v)))))
